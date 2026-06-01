@@ -1,18 +1,18 @@
 extern crate nalgebra_glm as glm;
 
 use std::collections::HashMap;
-use crate::entity::entity_renderer::EntityRenderer;
+use crate::entity::sprite_renderer::SpriteRenderer;
 use crate::entity::renderer::Renderer;
 use crate::entity::Transform::Transform;
 use crate::resource_manager::game_manager::TILE_SIZE;
-use crate::resource_manager::asset_manager;
+use crate::resource_manager::asset_manager::AssetManager;
 
 pub struct Map {
     pub width: u32,
     pub height: u32,
     pub data: Vec<Vec<char>>,
     tile_textures: HashMap<String, String>,
-    renderer: Option<EntityRenderer>
+    renderer: Option<SpriteRenderer>,
 }
 
 impl Map {
@@ -22,19 +22,17 @@ impl Map {
             height,
             data,
             tile_textures,
-            renderer: None
+            renderer: None,
         }
     }
 
-    pub fn initialize(&mut self, (shader_path, program_name): (String, &'static str), view_width: f32, view_height: f32) {
-        let manager = asset_manager::get();
-
+    pub fn initialize(&mut self, (shader_path, program_name): (String, &str), view_width: f32, view_height: f32, manager: &mut AssetManager) {
         let terrain_vertex_shader = format!("shaders/{}/vertex.vs", shader_path);
         let terrain_fragment_shader = format!("shaders/{}/fragment.fs", shader_path);        
 
         manager.load_shader_program(&terrain_vertex_shader, &terrain_fragment_shader, None, program_name);
         for (name, path) in self.tile_textures.iter() {
-            manager.load_texture(&path, Box::leak(name.to_string().into_boxed_str()), false);
+            manager.load_texture(&path, name, false);
         }
 
         unsafe {
@@ -44,23 +42,21 @@ impl Map {
             program.apply();
             program.set_mat4("projection", &ortho);
 
-            self.renderer = Some(EntityRenderer::new(program.clone()));
+            self.renderer = Some(SpriteRenderer::new(program.clone()));
         }
     }
 
-    pub fn render(&mut self) {
-        let manager = asset_manager::get();
+    pub fn render(&mut self, manager: &mut AssetManager) {
         match self.renderer {
             Some(ref mut renderer) => {
                 for (row_index, row) in self.data.iter().enumerate() {
                     for (col_index, &tile) in row.iter().enumerate() {
-                        //TODO: map data save char <-> string confusion
                         let texture_name = tile.to_string();
                         let tile_texture = manager.get_texture(texture_name.as_str()).unwrap();
                         let transform = Transform {
                             position: glm::vec2((col_index as f32) * TILE_SIZE, (row_index as f32) * TILE_SIZE),
                             scale: glm::vec2(TILE_SIZE, TILE_SIZE),
-                            rotation: 0.0
+                            rotation: 0.0,
                         };
                         renderer.draw(tile_texture, transform);
                     }

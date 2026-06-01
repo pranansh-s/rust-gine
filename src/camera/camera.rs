@@ -64,30 +64,30 @@ impl Controller for Camera {
                     if self.panning.speed + 2.0 < 10.0 {
                         self.update_speed_by(2.0);
                     }
-                }
-                else if keys[glfw::Key::KpSubtract as usize] {
+                } else if keys[glfw::Key::KpSubtract as usize] {
                     if self.panning.speed - 2.0 > 0.0 {
                         self.update_speed_by(-2.0);
                     }
                 }
             }
-            GameState::InMenu => { println!("Do Stuff Controls Menu"); }
-            GameState::Paused => { println!("Do Stuff Controls Paused"); }
+            GameState::InMenu => {
+                println!("Do Stuff Controls Menu");
+            }
+            GameState::Paused => {
+                println!("Do Stuff Controls Paused");
+            }
         }
     }
 
     fn update_mouse(&mut self, pos: (f32, f32), click: &Click, scroll: f32, state: &GameState, dt: f64) {
         match state {
             GameState::Playing => {
-                //Scaling
                 if scroll > 0.0 {
                     self.update_scale_by(glm::vec2(1.0, 1.0) * self.zoom_speed * dt as f32, glm::vec2(pos.0, pos.1));
-                }
-                else if scroll < 0.0 {
+                } else if scroll < 0.0 {
                     self.update_scale_by(glm::vec2(-1.0, -1.0) * self.zoom_speed * dt as f32, glm::vec2(pos.0, pos.1));
                 }
 
-                //Panning
                 let pos_vec = glm::vec2(pos.0, pos.1);
                 
                 if self.panning.mode {
@@ -107,8 +107,12 @@ impl Controller for Camera {
                     }
                 }
             }
-            GameState::InMenu => { println!("Do Stuff Mouse Menu"); }
-            GameState::Paused => { println!("Do Stuff Mouse Paused"); }
+            GameState::InMenu => {
+                println!("Do Stuff Mouse Menu");
+            }
+            GameState::Paused => {
+                println!("Do Stuff Mouse Paused");
+            }
         }
     }
 }

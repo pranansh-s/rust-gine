@@ -3,7 +3,6 @@ extern crate ini;
 use std::fs::File;
 use std::io::Read;
 use ini::ini;
-
 use std::collections::HashMap;
 
 use crate::graphics::texture2d::{Texture2D, TextureAlpha};
@@ -11,14 +10,13 @@ use crate::graphics::shader_program::ShaderProgram;
 use crate::resource_manager::map::Map;
 
 pub struct AssetManager {
-    textures: HashMap<&'static str, Texture2D>,
-    shader_programs: HashMap<&'static str, ShaderProgram>,
-    maps: HashMap<&'static str, Map>, //TODO: hashmap -> graph for better traversing
-    //sounds...
+    textures: HashMap<String, Texture2D>,
+    shader_programs: HashMap<String, ShaderProgram>,
+    maps: HashMap<String, Map>,
 }
 
 impl AssetManager {
-    fn new() -> Self {
+    pub fn new() -> Self {
         AssetManager {
             textures: HashMap::new(),
             shader_programs: HashMap::new(),
@@ -26,25 +24,24 @@ impl AssetManager {
         }
     }
 
-    //MAPS
     pub fn get_map(&mut self, name: &str) -> Option<&mut Map> {
         self.maps.get_mut(name)
     }
 
-    pub fn load_map(&mut self, file: &str, name: &'static str) -> &mut Map {
+    pub fn load_map(&mut self, file: &str, name: &str) -> &mut Map {
         let map = self.load_map_files(file);
-        self.maps.insert(name, map);
+        self.maps.insert(name.to_string(), map);
         self.maps.get_mut(name).unwrap()
     }
 
-    fn load_map_files(&self, name: &str) -> Map { //TODO: multiple textures for connecting 
+    fn load_map_files(&self, name: &str) -> Map {
         let map_file = ini!(safe name).unwrap();
         let map_string: Vec<char> = map_file["map"]["data"].as_ref().unwrap().chars().collect();
 
-        let width: Result<u32, _> = map_file["map"]["width"].as_ref().unwrap().parse();
-        let height: Result<u32, _> = map_file["map"]["height"].as_ref().unwrap().parse();
+        let width: u32 = map_file["map"]["width"].as_ref().unwrap().parse().unwrap();
+        let height: u32 = map_file["map"]["height"].as_ref().unwrap().parse().unwrap();
 
-        let data: Vec<Vec<char>> = map_string.chunks(width.clone().unwrap() as usize).map(|chunk| chunk.to_vec()).collect();
+        let data: Vec<Vec<char>> = map_string.chunks(width as usize).map(|chunk| chunk.to_vec()).collect();
 
         let mut texture_mapping: HashMap<String, String> = HashMap::new();
         for (name, texture_path) in map_file["tile"].iter() {
@@ -53,17 +50,16 @@ impl AssetManager {
             }
         }
 
-        Map::new(width.unwrap(), height.unwrap(), data, texture_mapping)
+        Map::new(width, height, data, texture_mapping)
     }
 
-    //SHADER_PROGRAMS
     pub fn get_shader_program(&mut self, name: &str) -> Option<&mut ShaderProgram> {
         self.shader_programs.get_mut(name)
     }
 
-    pub fn load_shader_program(&mut self, vertex_shader: &str, fragment_shader: &str, geometry_shader: Option<&str>, name: &'static str) -> &mut ShaderProgram { //TODO: later add tesselation, compute, etc
+    pub fn load_shader_program(&mut self, vertex_shader: &str, fragment_shader: &str, geometry_shader: Option<&str>, name: &str) -> &mut ShaderProgram {
         let shader_program = self.load_shader_program_files(vertex_shader, fragment_shader, geometry_shader);
-        self.shader_programs.insert(name, shader_program);
+        self.shader_programs.insert(name.to_string(), shader_program);
         self.shader_programs.get_mut(name).unwrap()
     }
 
@@ -85,23 +81,20 @@ impl AssetManager {
         });
 
         unsafe {
-            let shader_program = match geometry_data {
+            match geometry_data {
                 Some(value) => ShaderProgram::new(&[(&vertex_data, gl::VERTEX_SHADER), (&fragment_data, gl::FRAGMENT_SHADER), (&value, gl::GEOMETRY_SHADER)]).unwrap(),
                 None => ShaderProgram::new(&[(&vertex_data, gl::VERTEX_SHADER), (&fragment_data, gl::FRAGMENT_SHADER)]).unwrap(),
-            };
-            shader_program
+            }
         }
-
     }
 
-    //TEXTURES
     pub fn get_texture(&mut self, name: &str) -> Option<&mut Texture2D> {
         self.textures.get_mut(name)
     }
 
-    pub fn load_texture(&mut self, file: &str, name: &'static str, alpha: bool) -> &mut Texture2D {
+    pub fn load_texture(&mut self, file: &str, name: &str, alpha: bool) -> &mut Texture2D {
         let texture = self.load_texture_file(file, alpha);
-        self.textures.insert(name, texture);
+        self.textures.insert(name.to_string(), texture);
         self.textures.get_mut(name).unwrap()
     }
 
@@ -111,35 +104,31 @@ impl AssetManager {
 
         if alpha {
             new_texture_data = TextureAlpha::RGBA(new_texture_file.into_rgba8());
-        }
-        else {
+        } else {
             new_texture_data = TextureAlpha::RGB(new_texture_file.into_rgb8());
         }
 
         match new_texture_data {
             TextureAlpha::RGBA(value) => {
                 let (width, height) = value.dimensions();
-        
                 unsafe {
-                    let new_texture: Texture2D = Texture2D::new(width, height, value.as_raw(), gl::RGBA as i32, gl::RGBA, gl::REPEAT as i32, gl::REPEAT as i32, gl::LINEAR as i32, gl::LINEAR as i32).unwrap();
-                    new_texture
+                    Texture2D::new(width, height, value.as_raw(), gl::RGBA as i32, gl::RGBA, gl::REPEAT as i32, gl::REPEAT as i32, gl::LINEAR as i32, gl::LINEAR as i32).unwrap()
                 }
             }
             TextureAlpha::RGB(value) => {
                 let (width, height) = value.dimensions();
-        
                 unsafe {
-                    let new_texture: Texture2D = Texture2D::new(width, height, value.as_raw(), gl::RGB as i32, gl::RGB, gl::REPEAT as i32, gl::REPEAT as i32, gl::LINEAR as i32, gl::LINEAR as i32).unwrap();
-                    new_texture
+                    Texture2D::new(width, height, value.as_raw(), gl::RGB as i32, gl::RGB, gl::REPEAT as i32, gl::REPEAT as i32, gl::LINEAR as i32, gl::LINEAR as i32).unwrap()
                 }
             }
         }
     }
-}
 
-static mut ASSET_MANAGER: Option<AssetManager> = None;
-pub fn get() -> &'static mut AssetManager {
-    unsafe {
-        ASSET_MANAGER.get_or_insert_with(|| AssetManager::new())
+    pub fn remove_map(&mut self, name: &str) -> Option<Map> {
+        self.maps.remove(name)
+    }
+
+    pub fn insert_map(&mut self, name: &str, map: Map) {
+        self.maps.insert(name.to_string(), map);
     }
 }

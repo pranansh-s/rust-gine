@@ -7,12 +7,12 @@ use crate::graphics::vertex_array::VertexArray;
 use crate::graphics::texture2d::Texture2D;
 use crate::graphics::buffer::Buffer;
 
-pub struct DynamicRenderer {
+pub struct SpriteRenderer {
     shader_program: ShaderProgram,
     quad_vao: VertexArray,
 }
 
-impl DynamicRenderer {
+impl SpriteRenderer {
     pub fn new(shader_program: ShaderProgram) -> Self {
         let vertices: [f32; 24] = [ 
             0.0, 1.0, 0.0, 1.0,
@@ -39,14 +39,14 @@ impl DynamicRenderer {
             quad_vao.unbind();
         }
         
-        DynamicRenderer  {
+        SpriteRenderer {
             shader_program,
             quad_vao,
         }
     }
 }
 
-impl Renderer for DynamicRenderer {
+impl Renderer for SpriteRenderer {
     fn draw(&mut self, texture: &Texture2D, transform: Transform) {
         unsafe { 
             self.shader_program.apply();

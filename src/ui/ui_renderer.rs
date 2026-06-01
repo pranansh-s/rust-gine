@@ -3,8 +3,7 @@ extern crate nalgebra_glm as glm;
 use crate::graphics::shader_program::ShaderProgram;
 use crate::graphics::vertex_array::VertexArray;
 use crate::graphics::buffer::Buffer;
-use crate::resource_manager::asset_manager;
-
+use crate::resource_manager::asset_manager::AssetManager;
 use crate::ui::ui_component::Div;
 
 pub struct UiRenderer<'c> {
@@ -12,21 +11,18 @@ pub struct UiRenderer<'c> {
     height: u32,
     shader_program: ShaderProgram,
     vao: VertexArray,
-    node: &'c Div<'c>
+    node: &'c Div,
 }
 
 impl<'c> UiRenderer<'c> {
-    pub fn new(shader_name: &'static str, node: &'c Div, width: u32, height: u32,) -> Self {
-        let manager = asset_manager::get();
-
+    pub fn new(shader_name: &'static str, node: &'c Div, width: u32, height: u32, manager: &mut AssetManager) -> Self {
         let vertex_shader = format!("shaders/{}/vertex.vs", shader_name);
         let fragment_shader = format!("shaders/{}/fragment.fs", shader_name);  
 
         manager.load_shader_program(&vertex_shader, &fragment_shader, None, shader_name);
         let shader_program = manager.get_shader_program(shader_name).unwrap().clone();
 
-        let vao: VertexArray;
-        unsafe { vao = VertexArray::new().unwrap() };
+        let vao = unsafe { VertexArray::new().unwrap() };
         
         UiRenderer {
             width,
@@ -82,7 +78,6 @@ impl<'c> UiRenderer<'c> {
         let mut model: glm::Mat4 = glm::Mat4::identity();
         
         model = glm::translate(&model, &glm::vec3(self.node.transform.left, self.node.transform.top, 0.0));
-        // model = glm::rotate(&model, (transform.rotation).to_radians(), &glm::vec3(0.0, 0.0, 1.0));
         model = glm::scale(&model, &glm::vec3(self.node.transform.width / 2.0, self.node.transform.height / 2.0, 1.0));
 
         unsafe {
