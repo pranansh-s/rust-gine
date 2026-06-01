@@ -1,4 +1,4 @@
-# Rust OpenGL 2D Game Engine
+# Rust-Gine: OpenGL 2D Game Engine
 
 A modern, highly performant 2D game engine built with Rust and OpenGL. Features a clean, explicit resource ownership model, unified rendering pipelines, compile-safe DOM UI hierarchy, and high-precision timing.
 
